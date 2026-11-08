@@ -1540,6 +1540,7 @@ function pickLevel() {
   let r = Math.random() * tbl.reduce((a, c) => a + c, 0), lv = 1;
   for (let i = 0; i < 6; i++) { r -= tbl[i]; if (r < 0) { lv = i + 1; break; } }
   lv = Math.min(6, lv + Math.min(2, b.loop));
+  lv = Math.min(lv, 1 + (b.nd || 0) + 2 * (b.loop || 0));   // sanfter Anstieg: erste Aufgabe immer Stufe 1, jede gelöste Aufgabe öffnet höchstens eine Stufe mehr
   if (S.down) { lv = Math.max(1, lv - 1); S.down = false; }
   return lv;
 }
@@ -1905,7 +1906,7 @@ async function solved() {
   t.done = true; stopTimers();
   const base = valueNow(), dbl = S.board.dbl, fields = dbl ? base * 2 : base, parts = calcParts(), pts = parts.total;
   if (dbl) S.board.dbl = false;
-  S.solved++; awardPoints(pts); save();
+  S.solved++; S.board.nd = (S.board.nd || 0) + 1; awardPoints(pts); save();
   renderMeta(); renderSheet(); $('#kb').hidden = true;
   $('#bCheck').disabled = true; $('#bHint').disabled = true; $('#bSol').hidden = true; $('#bUndo').hidden = true;
   setMsg('✓ Geschafft! ' + fields + (fields === 1 ? ' Feld' : ' Felder') + ' vor.' + (dbl ? ' (✨ doppelt)' : ''), 'good');
@@ -2533,7 +2534,7 @@ function wire() {
   if (document.documentElement.classList.contains('adminmode')) { $('#admin').classList.remove('hide'); }
 }
 wire();
-if (window.BB_DEBUG) window.__bb = { get T() { return T; }, get S() { return S; }, get net() { return net; }, E, startTask, typeKey, hint, renderSheet, pickRule, closeTask, revealSolution, nBox, boxes, showResult, extendBoard, calcParts };
+if (window.BB_DEBUG) window.__bb = { get T() { return T; }, get S() { return S; }, get net() { return net; }, E, startTask, typeKey, hint, renderSheet, pickRule, closeTask, revealSolution, nBox, boxes, showResult, extendBoard, calcParts, pickLevel };
 
 })();
 </script>
