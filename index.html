@@ -409,6 +409,48 @@
   .pdetail .typing { opacity: .6; font-style: italic; }
   .pdetail .none { opacity: .65; padding: .5rem 0; }
 
+  /* Gewinn-Fenster */
+  .win { display: flex; align-items: center; gap: .8rem; margin: 0 0 .8rem; padding: .5rem .7rem; border: 2px solid var(--pink); border-radius: 1.2rem; background: var(--pink-soft); animation: winpulse 1.8s ease-in-out infinite; }
+  @keyframes winpulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(201, 59, 135, .45); transform: scale(1); } 50% { box-shadow: 0 0 0 .6rem rgba(201, 59, 135, 0); transform: scale(1.012); } }
+  .winTxt { flex: 1 1 8rem; font-weight: 800; font-size: 1.05rem; line-height: 1.3; color: var(--pink); }
+  .winTxt.drop { animation: valdrop2 .9s ease-out; }
+  @keyframes valdrop2 { 0% { color: #e04b3a; transform: scale(1.12); } 100% { color: var(--pink); transform: none; } }
+  .winview { position: relative; flex: 0 0 auto; width: min(22rem, 58%); height: 6.6rem; overflow: hidden; border-radius: .9rem; background: #fff; border: 1.4px solid var(--line); }
+  .mini-grid { position: absolute; left: 0; top: 0; transform-origin: 0 0; pointer-events: none; background: #fff0f7; border: 0; border-radius: 0; }
+  .mini-grid .cell.md { opacity: .4; filter: grayscale(.45); }
+  .mini-grid .cell.mp { box-shadow: 0 0 0 3px var(--pink), 0 0 .9rem rgba(201, 59, 135, .6); }
+  .mini-grid .mpath { fill: none; stroke: #c93b87; stroke-linecap: round; stroke-linejoin: round; animation: mdash 1s linear infinite; }
+  @keyframes mdash { to { stroke-dashoffset: -100; } }
+  .mini-grid .mtk { position: absolute; transform: translate(-50%, -60%); line-height: 1; filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .3)); animation: mbob 1s ease-in-out infinite; }
+  @keyframes mbob { 50% { transform: translate(-50%, -80%); } }
+  .mini-grid .mgoal { position: absolute; border-radius: 50%; border: 5px solid #f5c518; animation: mring 1s ease-out infinite; }
+  @keyframes mring { 0% { transform: translate(-50%, -50%) scale(.8); opacity: 1; } 100% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; } }
+  @media (max-width: 640px) { .win { padding: .4rem .5rem; gap: .5rem; margin-bottom: .5rem; } .winTxt { font-size: .85rem; } .winview { height: 4.8rem; width: 56%; } }
+
+  /* Ergebnis */
+  .ov.res { background: rgba(255, 255, 255, .72); backdrop-filter: blur(4px); z-index: 60; }
+  .rescard { width: min(100%, 28rem); text-align: center; padding: 1.4rem 1.2rem; border: 3px solid var(--pink); border-radius: 2rem; background: #fff; box-shadow: 0 1rem 3rem rgba(201, 59, 135, .35); animation: pop .5s ease-out; }
+  .rescard .rt { font-size: 2rem; font-weight: 800; color: var(--pink); margin-bottom: .4rem; }
+  .rrow { display: flex; justify-content: space-between; gap: 1rem; padding: .35rem .9rem; margin-top: .45rem; border-radius: 99px; background: var(--pink-soft); font-weight: 800; font-size: 1.1rem; color: #4a1636; animation: resin .45s cubic-bezier(.2, 1.4, .4, 1); }
+  .rrow.fl { background: linear-gradient(90deg, #ffe58a, #ffb3d6, #b3d4ff, #b6f0c8, #ffe58a); background-size: 300% 100%; animation: resin .45s cubic-bezier(.2, 1.4, .4, 1), rainbow 1.1s linear .45s infinite; }
+  .rrow { white-space: nowrap; }
+  .rrow.fl.big { font-size: 1.25rem; animation: resin .45s cubic-bezier(.2, 1.4, .4, 1), rainbow .6s linear .45s infinite, wob .5s ease-in-out .45s infinite; }
+  @keyframes resin { from { transform: scale(.2) rotate(-6deg); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes rainbow { to { background-position: 300% 0; } }
+  @keyframes wob { 0%, 100% { rotate: -1.5deg; scale: 1; } 50% { rotate: 1.5deg; scale: 1.06; } }
+  .rtot { margin-top: .9rem; font-size: 2.6rem; font-weight: 800; color: var(--pink); min-height: 3.2rem; }
+  .rtot.hot { animation: tothot .6s ease-in-out infinite; }
+  @keyframes tothot { 50% { transform: scale(1.12); text-shadow: 0 0 1rem #f5c518; } }
+  .rfields { margin-top: .2rem; font-weight: 700; color: #4a1636; min-height: 1.5rem; }
+  .ov.res.zap::before { content: ''; position: fixed; inset: 0; background: #fff; animation: zapf .7s ease-out forwards; pointer-events: none; }
+  @keyframes zapf { 0% { opacity: .95; } 100% { opacity: 0; } }
+
+  /* Brett wächst: Erdbeben */
+  .boardwrap.quake { animation: quake .16s linear infinite; }
+  @keyframes quake { 0% { transform: translate(0, 0) rotate(0); } 20% { transform: translate(-6px, 3px) rotate(-.4deg); } 40% { transform: translate(5px, -4px) rotate(.4deg); } 60% { transform: translate(-4px, -3px) rotate(-.3deg); } 80% { transform: translate(6px, 4px) rotate(.3deg); } 100% { transform: translate(0, 0) rotate(0); } }
+  .cell.born { animation: born .8s cubic-bezier(.3, 1.5, .5, 1) both; animation-delay: var(--bd, 0s); }
+  @keyframes born { 0% { transform: translateY(-260%) scale(.2) rotate(-60deg); opacity: 0; } 55% { opacity: 1; transform: translateY(10%) scale(1.3) rotate(10deg); } 78% { transform: translateY(-4%) scale(.92); } 100% { transform: none; opacity: 1; } }
+
 </style>
 </head>
 <body>
@@ -551,10 +593,13 @@
     <div class="tmeta">
       <span class="crest" aria-hidden="true"></span>
       <span class="chip" id="tLevel"></span>
-      <span class="chip val" id="tValue"></span>
       <span class="chip" id="tTips"></span>
       <span class="chip tmr" id="tTimer" hidden></span>
       <span class="chip" id="tPend" hidden>⏳ Neue Paare, sobald du fertig bist</span>
+    </div>
+    <div class="win" id="win">
+      <div class="winTxt" id="tValue"></div>
+      <div class="winview" id="tMini" aria-hidden="true"></div>
     </div>
     <h2 id="tTitle"></h2>
     <div class="sheet" id="sheet" aria-live="polite"></div>
@@ -572,6 +617,16 @@
       <button class="btn" id="bSol" type="button" hidden>Lösung anzeigen</button>
       <button class="btn primary big" id="bCheck" type="button">Prüfen ✓</button>
     </div>
+  </div>
+</div>
+
+<!-- Ergebnis -->
+<div class="ov res" id="result" aria-live="polite">
+  <div class="rescard">
+    <div class="rt" id="resT">Geschafft!</div>
+    <div id="resRows"></div>
+    <div class="rtot" id="resTot"></div>
+    <div class="rfields" id="resFields"></div>
   </div>
 </div>
 
@@ -1154,7 +1209,9 @@ const sfx = {
   boing: () => { tone(220, 0.25, 'sine', 0, 0.14); tone(330, 0.2, 'sine', 0.05, 0.1); },
   yes: () => { tone(660, 0.12, 'triangle', 0, 0.14); tone(990, 0.22, 'triangle', 0.09, 0.14); },
   no: () => { tone(220, 0.18, 'sawtooth', 0, 0.06); tone(180, 0.22, 'sawtooth', 0.12, 0.06); },
-  key: () => tone(520 + rnd(80), 0.03, 'sine', 0, 0.03)
+  key: () => tone(520 + rnd(80), 0.03, 'sine', 0, 0.03),
+  rumble: (ms) => { for (let i = 0; i < ms / 110; i++) tone(46 + rnd(30), 0.16, 'sawtooth', i * 0.11, 0.12); },
+  zap: () => { [1200, 1600, 2000, 2600].forEach((f, i) => tone(f, 0.12, 'square', i * 0.06, 0.07)); tone(150, 0.4, 'sawtooth', 0, 0.08); }
 };
 
 /* Konfetti */
@@ -1356,15 +1413,34 @@ async function slot() {
   await sleep(1100); el.remove();
   return final;
 }
+async function quake(ms) {
+  const bw = $('.boardwrap'), b = S.board;
+  bw.classList.add('quake'); sfx.rumble(ms);
+  const t0 = Date.now();
+  while (Date.now() - t0 < ms) {
+    const c = cellCenter(1 + rnd(b.N));
+    fx(c.x, c.y, ['💨', '🪨', '💥'][rnd(3)], '', (Math.random() - 0.5) * 50, -20 - rnd(30), 0.8);
+    await sleep(120);
+  }
+  bw.classList.remove('quake');
+}
 async function extendBoard() {
   const b = S.board, old = b.N;
+  say('🌋 Es rumpelt … das Brett bebt!');
+  await quake(1500);
   b.N = Math.min(MAX_N, old + 5);
   while (b.cells.length <= b.N) b.cells.push(null);
+  for (let p = old; p < b.N; p++) b.cells[p] = 'q';   // alle neuen Felder sind Ereignisfelder
   b.cells[b.N] = null;
-  sprinkle(b.cells, old, b.N - 2, 1 + rnd(2));
   buildBoard(); layout(); save();
-  for (let p = old + 1; p <= b.N; p++) setTimeout(() => flashCell(p), (p - old) * 120);
-  await sleep(900);
+  say('🛤️ Neue Felder wachsen aus dem Boden – lauter Überraschungen!');
+  for (let p = old; p <= b.N; p++) {
+    const el = cellEls[p], dl = (p - old) * 0.16;
+    el.style.setProperty('--bd', dl + 's'); el.classList.add('born');
+    setTimeout(() => { sfx.hop(p); const c = cellCenter(p); fx(c.x, c.y + c.h * 0.2, '💥', '', 0, -10, 0.6); }, dl * 1000 + 450);
+    setTimeout(() => el.classList.remove('born'), dl * 1000 + 1500);
+  }
+  await sleep((b.N - old) * 160 + 1300);
 }
 async function applyKind(k0) {
   const b = S.board;
@@ -1428,7 +1504,6 @@ async function reachGoal() {
 /* ===== Aufgaben: Blatt, Tastatur, Tipps, Prüfen ===== */
 const VALUE = [0, 2, 2, 3, 4, 4, 5];            // Felder pro Aufgabe
 const BASE_PTS = [0, 10, 15, 20, 30, 40, 50];   // Punkte für die Rangliste
-const PAR_S = [0, 50, 80, 110, 170, 230, 300];  // Richtzeit in Sekunden für den (unsichtbaren) Zeitbonus
 const LEVEL_NAME = ['', 'Stufe 1 · Einstieg', 'Stufe 2 · Ketten', 'Stufe 3 · Doppelnegation', 'Stufe 4 · Konditionalbeweis', 'Stufe 5 · Konjunktion', 'Stufe 6 · Knobelaufgabe'];
 const RULES_AT = { 1: ['MP', 'MT'], 2: ['MP', 'MT'], 3: ['MP', 'MT', 'DN'], 4: ['MP', 'MT', 'DN', 'AN'], 5: ['MP', 'MT', 'DN', 'AN', 'KE'], 6: ['MP', 'MT', 'DN', 'AN', 'KE'] };
 const RULE_SHORT = { MP: 'Modus Ponens', MT: 'Modus Tollens', DN: 'Doppelnegation', KE: 'Konjunktion einführen', AN: 'angenommen' };
@@ -1471,6 +1546,39 @@ function makeTask() {
 }
 const valueNow = () => Math.max(1, T.value0 - T.tips - Math.floor(T.wrong / 3));
 const lastLineIdx = (rows) => { for (let i = rows.length - 1; i >= 0; i--) if (rows[i].k === 'l') return i; return -1; };
+
+/* ---------- Gewinn-Fenster: Ausschnitt des Bretts mit dem Weg ---------- */
+function renderMini(fields) {
+  const host = $('#tMini'), b = S.board;
+  if (!host || !b || !cellEls.length || !cellEls[b.pos]) return;
+  const from = b.pos, to = Math.min(b.N, from + fields), a = Math.max(1, from - 1), z = Math.min(b.N, to + 1);
+  let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+  for (let p = a; p <= z; p++) { const c = cellEls[p]; x0 = Math.min(x0, c.offsetLeft); y0 = Math.min(y0, c.offsetTop); x1 = Math.max(x1, c.offsetLeft + c.offsetWidth); y1 = Math.max(y1, c.offsetTop + c.offsetHeight); }
+  const pad = 10; x0 -= pad; y0 -= pad; x1 += pad; y1 += pad;
+  const bw = x1 - x0, bh = y1 - y0, vw = host.clientWidth || 300, vh = host.clientHeight || 100;
+  const sc = Math.min(vw / bw, vh / bh, 1.15), gw = grid.offsetWidth, gh = grid.offsetHeight;
+  const cl = grid.cloneNode(true);
+  cl.className = 'mini-grid'; cl.removeAttribute('id');
+  const clampTo = (v, size, view) => (size * sc > view ? Math.max(view - size * sc, Math.min(0, v)) : (view - size * sc) / 2);
+  const tx = clampTo((vw - bw * sc) / 2 - x0 * sc, gw, vw), ty = clampTo((vh - bh * sc) / 2 - y0 * sc, gh, vh);
+  cl.style.cssText = 'width:' + gw + 'px;height:' + gh + 'px;transform:translate(' + tx + 'px,' + ty + 'px) scale(' + sc + ')';
+  const road = cl.querySelector('#road'); if (road) road.removeAttribute('id');
+  cl.querySelectorAll('.cell').forEach((el, i) => { el.classList.remove('flash', 'born'); el.classList.add(i + 1 >= from && i + 1 <= to ? 'mp' : 'md'); });
+  const NS = 'http://www.w3.org/2000/svg', pts = [];
+  for (let p = from; p <= to; p++) { const c = cellCenter(p); pts.push(c.x + ',' + c.y); }
+  const sw = 6 / sc, svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('width', gw); svg.setAttribute('height', gh); svg.setAttribute('viewBox', '0 0 ' + gw + ' ' + gh);
+  svg.style.cssText = 'position:absolute;left:0;top:0';
+  svg.innerHTML = '<polyline class="mpath" points="' + pts.join(' ') + '" stroke-width="' + sw + '" stroke-dasharray="' + sw * 0.3 + ' ' + sw * 2.2 + '"/>';
+  cl.appendChild(svg);
+  const cs = cellCenter(from), ce = cellCenter(to);
+  const goal = document.createElement('div'); goal.className = 'mgoal';
+  goal.style.cssText = 'left:' + ce.x + 'px;top:' + ce.y + 'px;width:' + ce.w * 0.9 + 'px;height:' + ce.w * 0.9 + 'px;border-width:' + 4 / sc + 'px';
+  const tk = document.createElement('div'); tk.className = 'mtk'; tk.textContent = emojiOf(S.k);
+  tk.style.cssText = 'left:' + cs.x + 'px;top:' + cs.y + 'px;font-size:' + cs.w * 0.62 + 'px';
+  cl.appendChild(goal); cl.appendChild(tk);
+  host.replaceChildren(cl);
+}
 
 /* ---------- Anzeige des Blatts ---------- */
 function fHtml(r) {
@@ -1563,6 +1671,7 @@ function renderMeta() {
   const txt = '🎯 ' + v + (v === 1 ? ' Feld steht' : ' Felder stehen') + ' auf dem Spiel' + (dbl ? ' · ✨ doppelt: ' + v * 2 : '');
   if (el.textContent !== txt && el.textContent) { el.classList.remove('drop'); void el.offsetWidth; el.classList.add('drop'); el.addEventListener('animationend', () => el.classList.remove('drop'), { once: true }); }
   el.textContent = txt;
+  renderMini(dbl ? v * 2 : v);
   $('#tTips').textContent = '💡 Tipps: ' + T.tips + '/3';
   $('#bHint').disabled = T.tips >= 3 || T.done;
   $('#bUndo').hidden = !(T.mode === 'free' && !T.done && T.proof.rows.length > 0);
@@ -1755,11 +1864,11 @@ function hint() {
 }
 
 /* ---------- Ende der Aufgabe ---------- */
-function calcPoints() {
-  const par = PAR_S[T.level] * (T.mode === 'gap' ? 0.6 : 1) * 1000;
-  const bonus = T.vis <= par ? 0.3 : T.vis >= 2 * par ? 0 : 0.3 * (1 - (T.vis - par) / par);
-  const pts = BASE_PTS[T.level] * (1 - 0.2 * T.tips) * (1 + bonus) * (1 - 0.03 * Math.min(5, T.wrong));
-  return Math.max(1, Math.round(pts));
+function calcParts() {
+  const base = BASE_PTS[T.level], sec = T.vis / 1000;
+  const noTip = T.tips === 0 ? Math.round(base * 0.25) : 0;
+  const fast = sec < 10, speed = sec < 20 ? Math.round(base * (fast ? 0.6 : 0.3)) : 0;
+  return { base, noTip, speed, fast, sec, total: Math.max(1, base + noTip + speed) };
 }
 function awardPoints(pts) {
   if (pts <= 0) return;
@@ -1773,17 +1882,42 @@ function stopTimers() { timers.forEach(clearInterval); timers = []; }
 async function solved() {
   const t = T;
   t.done = true; stopTimers();
-  const base = valueNow(), dbl = S.board.dbl, fields = dbl ? base * 2 : base, pts = calcPoints();
+  const base = valueNow(), dbl = S.board.dbl, fields = dbl ? base * 2 : base, parts = calcParts(), pts = parts.total;
   if (dbl) S.board.dbl = false;
   S.solved++; awardPoints(pts); save();
   renderMeta(); renderSheet(); $('#kb').hidden = true;
   $('#bCheck').disabled = true; $('#bHint').disabled = true; $('#bSol').hidden = true; $('#bUndo').hidden = true;
   setMsg('✓ Geschafft! ' + fields + (fields === 1 ? ' Feld' : ' Felder') + ' vor.' + (dbl ? ' (✨ doppelt)' : ''), 'good');
   sfx.cheer(); burst(innerWidth / 2, innerHeight * 0.45, 60);
-  await sleep(1500);
-  closeTask();
+  await sleep(500);
+  await showResult(parts, fields, dbl);
+  closeTask(); closeOv('result');
   await moveForward(fields);
   afterTurn();
+}
+async function showResult(pp, fields, dbl) {
+  const ov = $('#result'), rows = $('#resRows'), tot = $('#resTot'), fl = $('#resFields');
+  let skip = false; ov.onclick = () => { skip = true; };
+  const wait = async (ms) => { const t0 = Date.now(); while (Date.now() - t0 < ms && !skip) await sleep(40); };
+  rows.innerHTML = ''; tot.textContent = ''; tot.classList.remove('hot'); fl.textContent = '';
+  $('#resT').textContent = pp.speed ? (pp.fast ? '⚡ Superschnell! ⚡' : '⚡ Blitzschnell!') : 'Geschafft!';
+  ov.classList.toggle('zap', !!pp.speed);
+  const items = [['Grundpunkte', pp.base, '', sfx.ding]];
+  if (pp.noTip) items.push(['💡✗ Ohne Tipp gelöst', pp.noTip, 'fl', sfx.yes]);
+  if (pp.speed) items.push([pp.fast ? '⚡⚡ SUPER-BLITZ · &lt;10 s' : '⚡ Blitz · &lt;20 s', pp.speed, 'fl' + (pp.fast ? ' big' : ''), sfx.zap]);
+  openOv('result');
+  for (const it of items) {
+    const d = document.createElement('div'); d.className = 'rrow ' + it[2];
+    d.innerHTML = '<span>' + it[0] + '</span><span>+' + it[1] + '</span>';
+    rows.appendChild(d); it[3](); if (it[2]) burst(innerWidth / 2, innerHeight * 0.4, it[2].includes('big') ? 90 : 40);
+    await wait(650);
+  }
+  const t0 = Date.now(), dur = 700;
+  while (!skip && Date.now() - t0 < dur) { tot.textContent = Math.round(pp.total * (Date.now() - t0) / dur) + ' Punkte'; await sleep(30); }
+  tot.textContent = pp.total + ' Punkte'; if (pp.speed || pp.noTip) tot.classList.add('hot');
+  fl.textContent = '🎲 ' + fields + (fields === 1 ? ' Feld' : ' Felder') + ' vor' + (dbl ? ' (✨ doppelt)' : '');
+  sfx.cheer();
+  await wait(1500);
 }
 function revealSolution(auto) {
   if (!T || T.done) return;
@@ -1847,7 +1981,8 @@ function openRules() {
     AN: '<b>Konditionalbeweis</b>Ist das z.z. <code>X → Y</code>, nimm <code>X</code> an („angenommen“). Das neue z.z. ist <code>Y</code>.',
     KE: '<b>Konjunktion einführen</b>Aus <code>X</code> und <code>Y</code> folgt <code>X ∧ Y</code>.'
   };
-  $('#rulesBody').innerHTML = set.map((r) => '<div class="ruleitem">' + items[r] + '</div>').join('') + '<p class="small" style="margin-top:.6rem">Randnotiz: erst die Zeilennummern, dann die Regel, zum Beispiel „2,3, Modus Tollens“.</p>';
+  $('#rulesBody').innerHTML = set.map((r) => '<div class="ruleitem">' + items[r] + '</div>').join('') + '<p class="small" style="margin-top:.6rem">Randnotiz: erst die Zeilennummern, dann die Regel, zum Beispiel „2,3, Modus Tollens“.</p>' +
+    '<p class="small" style="margin-top:.4rem">Punkte: Grundpunkte, dazu Bonus ohne Tipp und Blitz-Bonus (unter 20 s, noch mehr unter 10 s). Tipps kosten keine Punkte, aber Felder. Wer die Lösung anzeigen lässt, bekommt 0 Punkte.</p>';
   openOv('rules');
 }
 async function startTask() {
@@ -2346,7 +2481,7 @@ function wire() {
   if (document.documentElement.classList.contains('adminmode')) { $('#admin').classList.remove('hide'); }
 }
 wire();
-if (window.BB_DEBUG) window.__bb = { get T() { return T; }, get S() { return S; }, get net() { return net; }, E, startTask, typeKey, hint, renderSheet, pickRule, closeTask, revealSolution, nBox, boxes };
+if (window.BB_DEBUG) window.__bb = { get T() { return T; }, get S() { return S; }, get net() { return net; }, E, startTask, typeKey, hint, renderSheet, pickRule, closeTask, revealSolution, nBox, boxes, showResult, extendBoard, calcParts };
 
 })();
 </script>
