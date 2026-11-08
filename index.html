@@ -955,15 +955,12 @@ function undoLine(st) {
 function makeGaps(rows, kind, count, rng) {
   const cand = [];
   rows.forEach((r, i) => { if (r.k === 'l') cand.push(i); });
-  const zz = [];
-  rows.forEach((r, i) => { if (r.k === 'zz' && i > 0) zz.push(i); });
   const pickIdx = shuffle(cand, rng).slice(0, Math.min(count, cand.length));
   const gaps = [];
   pickIdx.forEach((i) => {
     const part = kind === 'notes' ? 'a' : kind === 'lines' ? 'f' : (rng() < 0.5 ? 'a' : 'f');
     gaps.push({ i, part });
   });
-  if ((kind === 'lines' || kind === 'mixed') && zz.length && rng() < 0.5) gaps.push({ i: zz[Math.floor(rng() * zz.length)], part: 'f' });
   return gaps;
 }
 function lineFormulas(rows) { const m = {}; rows.forEach((r) => { if (r.n) m[r.n] = r.f; }); return m; }
@@ -1525,7 +1522,7 @@ async function reachGoal() {
 /* ===== Aufgaben: Blatt, Tastatur, Tipps, Prüfen ===== */
 const VALUE = [0, 2, 2, 3, 4, 4, 5];            // Felder pro Aufgabe
 const BASE_PTS = [0, 10, 15, 20, 30, 40, 50];   // Punkte für die Rangliste
-const LEVEL_NAME = ['', 'Stufe 1 · Einstieg', 'Stufe 2 · Ketten', 'Stufe 3 · Doppelnegation', 'Stufe 4 · Konditionalbeweis', 'Stufe 5 · Konjunktion', 'Stufe 6 · Knobelaufgabe'];
+const LEVEL_NAME = ['', 'Stufe 1', 'Stufe 2', 'Stufe 3', 'Stufe 4', 'Stufe 5', 'Stufe 6'];
 const RULES_AT = { 1: ['MP', 'MT'], 2: ['MP', 'MT'], 3: ['MP', 'MT', 'DN'], 4: ['MP', 'MT', 'DN', 'AN'], 5: ['MP', 'MT', 'DN', 'AN', 'KE'], 6: ['MP', 'MT', 'DN', 'AN', 'KE'] };
 const RULE_SHORT = { MP: 'Modus Ponens', MT: 'Modus Tollens', DN: 'Doppelnegation', KE: 'Konjunktion einführen', AN: 'angenommen' };
 const subS = (f) => (f.t === 'i' || f.t === 'c' ? '(' + E.show(f) + ')' : E.show(f));
@@ -1535,13 +1532,15 @@ let T = null, busy = false, timers = [];
 
 function pickLevel() {
   if (window.BB_DEBUG && window.BB_LEVEL) return window.BB_LEVEL;
-  const b = S.board, f = Math.min(1, (b.pos - 1) / (b.N - 1));
-  const tbl = f < 0.14 ? [6, 3, 1, 0, 0, 0] : f < 0.3 ? [2, 5, 3, 0.5, 0, 0] : f < 0.5 ? [1, 2, 4, 3, 1, 0] : f < 0.72 ? [0, 1, 2, 4, 3, 1] : [0, 0, 1, 3, 4, 3];
-  let r = Math.random() * tbl.reduce((a, c) => a + c, 0), lv = 1;
-  for (let i = 0; i < 6; i++) { r -= tbl[i]; if (r < 0) { lv = i + 1; break; } }
-  lv = Math.min(6, lv + Math.min(2, b.loop));
-  lv = Math.min(lv, 1 + (b.nd || 0) + 2 * (b.loop || 0));   // sanfter Anstieg: erste Aufgabe immer Stufe 1, jede gelöste Aufgabe öffnet höchstens eine Stufe mehr
+  const b = S.board, n = b.nd || 0;            // n = Aufgaben, die auf diesem Brett schon gestellt wurden
+  b.nd = n + 1;
+  // stetiger Anstieg: Stufe wächst alle 2 Aufgaben, jede volle Runde gibt +1; nie leichter als die Stufe davor (außer nach Fehlschlag)
+  const base = 1 + Math.floor(n / 2) + (b.loop || 0);
+  let lv = base + (n >= 2 && Math.random() < 0.25 ? 1 : 0);
+  lv = Math.max(lv, Math.min(6, b.lastLv || 1));
+  lv = Math.min(6, lv);
   if (S.down) { lv = Math.max(1, lv - 1); S.down = false; }
+  b.lastLv = Math.max(b.lastLv || 1, S.down === false ? lv : lv);
   return lv;
 }
 function pickMode(level) {
@@ -1629,7 +1628,8 @@ function fCell(r, i) {
   return fHtml(r);
 }
 /* Randnotiz: genau so viele Kästchen, wie Zeilennummern gebraucht werden */
-const nBox = (rule, row) => (rule === 'AN' ? 0 : rule === 'DN' ? 1 : rule ? 2 : row ? (row.rule === 'AN' ? 0 : (row.refs || []).length || 2) : 2);
+/* Randnotiz: standardmäßig ein Kästchen; weitere entstehen beim Tippen (max. 2) */
+const nBox = (e) => (e.rule === 'AN' ? 0 : Math.min(2, Math.max(1, Array.isArray(e.b) ? e.b.length : String(e.refs || '').split(',').filter((x) => x !== '').length)));
 function boxes(e, n) {
   const b = Array.isArray(e.b) ? e.b.slice() : String(e.refs || '').split(',').filter((x) => x !== '');
   while (b.length < n) b.push('');
@@ -1638,14 +1638,12 @@ function boxes(e, n) {
 function setBoxes(e, b) { e.b = b; e.refs = b.filter(Boolean).join(','); }
 function curBox(e, n) {
   if (n <= 0) return -1;
-  const a = T.active, b = boxes(e, n);
-  if (a && a.b != null) return Math.min(a.b, n - 1);
-  const k = b.findIndex((v) => !v);
-  return k < 0 ? n - 1 : k;
+  const a = T.active;
+  return a && a.b != null ? Math.min(a.b, n - 1) : n - 1;
 }
 function annBtn(i, e, row) {
   const key = i + ':a', st = i === 'new' ? '' : (T.status[key] || ''), lock = st === 'ok' || st === 'gift';
-  const n = nBox(e.rule, row), act = isAct(i, 'a'), ab = act ? curBox(e, n) : -1, b = boxes(e, n);
+  const n = nBox(e), act = isAct(i, 'a'), ab = act ? curBox(e, n) : -1, b = boxes(e, n);
   let h = b.map((v, k) => '<span class="bx' + (v ? ' f' : '') + (k === ab ? ' cur' : '') + '" data-b="' + k + '">' + esc(v) + '</span>').join('<span class="cm">,</span>');
   h += (n ? '<span class="cm">,</span>' : '') + '<span class="rl' + (e.rule ? ' f' : '') + '">' + (e.rule ? esc(RULE_SHORT[e.rule]) : 'Regel') + '</span>';
   return '<span class="gap agap abox' + (!e.refs && !e.rule ? ' empty' : '') + (act ? ' act' : '') + (st ? ' ' + st : '') + '" data-i="' + i + '" data-p="a"' + (lock ? ' data-lock="1"' : '') + '>' + h + '</span>';
@@ -1731,23 +1729,25 @@ function typeKey(ch) {
     if (v.length > 40) return;
     setF(a, v);
   } else {
-    const e = getA(a), n = nBox(e.rule, a.i === 'new' ? null : T.rows[a.i]), b = boxes(e, n);
+    const e = getA(a), n = nBox(e), b = boxes(e, n);
     let cur = curBox(e, n);
     const maxLn = a.i === 'new' ? T.proof.lines.length : T.rows[a.i].n - 1;
+    const full = (v) => v.length >= 2 || (v && +v * 10 > maxLn);
     if (ch === 'back') {
       if (cur >= 0 && b[cur]) b[cur] = b[cur].slice(0, -1);
-      else if (cur > 0) { cur--; b[cur] = b[cur].slice(0, -1); }
+      else if (cur > 0) { b.pop(); cur--; b[cur] = b[cur].slice(0, -1); }
       else if (e.rule) { e.rule = ''; }
       else return;
-    } else if (ch === ',') {
-      if (cur < 0 || cur >= n - 1) return;
-      cur++;
-    } else if (/^[0-9]$/.test(ch)) {
-      if (cur < 0) return;
-      if (b[cur].length >= 2) return;
-      b[cur] += ch;
-      // weiter zum nächsten Kästchen, wenn keine zweistellige Zeilennummer mehr möglich ist
-      if ((b[cur].length === 2 || +b[cur] * 10 > maxLn) && cur < n - 1) cur++;
+    } else if (ch === ',' || /^[0-9]$/.test(ch)) {
+      if (cur < 0) { setMsg('Bei „angenommen“ werden keine Zeilennummern eingetragen.', 'tip'); return; }
+      if (ch === ',') {
+        if (!b[cur] || cur >= 1) return;
+        b.push(''); cur++;
+      } else {
+        if (b[cur].length >= 2) { if (cur >= 1) return; b.push(''); cur++; }
+        else if (cur === 0 && n < 2 && full(b[cur])) { b.push(''); cur++; }
+        b[cur] += ch;
+      }
     } else return;
     setBoxes(e, b); a.b = cur;
   }
@@ -1757,7 +1757,7 @@ function pickRule(r) {
   if (!T || T.done || !T.active || T.active.p !== 'a') return;
   const e = getA(T.active);
   e.rule = e.rule === r ? '' : r;
-  const row = T.active.i === 'new' ? null : T.rows[T.active.i], n = nBox(e.rule, row);
+  const n = nBox(e);
   setBoxes(e, e.rule === 'AN' ? [] : boxes(e, n).slice(0, n));
   delete T.active.b;
   clearStatus(T.active); sfx.key(); renderSheet();
@@ -1906,7 +1906,7 @@ async function solved() {
   t.done = true; stopTimers();
   const base = valueNow(), dbl = S.board.dbl, fields = dbl ? base * 2 : base, parts = calcParts(), pts = parts.total;
   if (dbl) S.board.dbl = false;
-  S.solved++; S.board.nd = (S.board.nd || 0) + 1; awardPoints(pts); save();
+  S.solved++; awardPoints(pts); save();
   renderMeta(); renderSheet(); $('#kb').hidden = true;
   $('#bCheck').disabled = true; $('#bHint').disabled = true; $('#bSol').hidden = true; $('#bUndo').hidden = true;
   setMsg('✓ Geschafft! ' + fields + (fields === 1 ? ' Feld' : ' Felder') + ' vor.' + (dbl ? ' (✨ doppelt)' : ''), 'good');
@@ -1963,7 +1963,7 @@ const openOv = (id) => { $('#' + id).classList.add('on'); document.body.classLis
 const closeOv = (id) => { $('#' + id).classList.remove('on'); if (!document.querySelector('.ov.on')) document.body.classList.remove('noscroll'); };
 function openTask(t) {
   T = t;
-  $('#bCheck').textContent = 'Prüfen ✓'; $('#bCheck').disabled = false; $('#bHint').disabled = false; $('#bSol').hidden = true;
+  $('#bCheck').textContent = T.mode === 'free' ? 'Zeile prüfen ✓' : 'Lücken prüfen ✓'; $('#bCheck').disabled = false; $('#bHint').disabled = false; $('#bSol').hidden = true;
   setMsg('');
   renderMeta(); renderSheet();
   openOv('task');
