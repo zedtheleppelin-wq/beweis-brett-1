@@ -430,6 +430,7 @@
         <input id="inRoom" type="text" maxlength="16" autocomplete="off" autocapitalize="none" spellcheck="false"></label>
       <div class="rerr" id="lerr" role="alert"></div>
       <div class="rbtns"><button class="btn primary big" id="btnLogin" type="button">Los geht's ▶</button></div>
+      <div class="rbtns"><button class="btn" id="toAdmin" type="button">🔑 Admin-Zugang</button></div>
     </div>
   </section>
 
@@ -491,7 +492,7 @@
         <input id="apw" type="password" autocomplete="off"></label>
       <div class="rerr" id="aerr" role="alert"></div>
       <div class="rbtns"><button class="btn primary big" id="aOpen" type="button">Raum öffnen</button><button class="btn" id="aCreate" type="button">Neuen Raum anlegen</button></div>
-      <p class="small"><a href="." id="toStudent">Zur Ansicht für Lernende</a></p>
+      <div class="rbtns"><button class="btn" id="toStudent" type="button">← Zurück zur Startseite</button></div>
     </div>
     <div class="hide" id="apanel">
       <div class="gtools admhead">
@@ -2313,7 +2314,8 @@ function wire() {
   $('#aLogout').addEventListener('click', adminClose);
   document.querySelector('.tabs').addEventListener('click', (e) => { const b = e.target.closest('.tab'); if (b) adminTab(b.dataset.tab); });
   $('#apgrid').addEventListener('click', (e) => { const c = e.target.closest('.pc'); if (!c) return; admin.sel = c.dataset.k; adminRender(); });
-  $('#toStudent').setAttribute('href', location.pathname);
+  $('#toAdmin').addEventListener('click', () => { document.documentElement.classList.add('adminmode'); $('#login').classList.add('hide'); $('#admin').classList.remove('hide'); setTimeout(() => $(($('#aroom').value ? '#apw' : '#aroom')).focus(), 50); });
+  $('#toStudent').addEventListener('click', () => { document.documentElement.classList.remove('adminmode'); $('#admin').classList.add('hide'); $('#login').classList.remove('hide'); });
   $('#aStart').addEventListener('click', adminStart); $('#aPair').addEventListener('click', doPairing);
   $('#aEnd').addEventListener('click', adminEnd); $('#aReset').addEventListener('click', adminReset);
   document.addEventListener('keydown', (e) => {
