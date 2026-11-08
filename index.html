@@ -482,17 +482,21 @@
       <span class="crest" role="img" aria-label="Schullogo"></span>
       <div>
         <h1>Lehrkraft-Ansicht</h1>
-        <p class="sub" id="asub">Lege einen Spielraum an oder öffne deinen Raum mit dem Passwort. Dieses Fenster muss während des Spiels geöffnet bleiben, denn es bildet zum Timer-Ende die Paare.</p>
+        <p class="sub" id="asub">Nur für die Lehrkraft. Dieses Fenster muss während des Spiels geöffnet bleiben, denn es bildet zum Timer-Ende die Paare.</p>
       </div>
     </header>
     <div class="rcard lcard" id="agate">
-      <label>Kurs-Code (den Lernenden mitteilen)
-        <input id="aroom" type="text" maxlength="16" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="zum Beispiel 10a"></label>
-      <label>Dein Passwort (nur für dich)
+      <label>Admin-Passwort
         <input id="apw" type="password" autocomplete="off"></label>
       <div class="rerr" id="aerr" role="alert"></div>
-      <div class="rbtns"><button class="btn primary big" id="aOpen" type="button">Raum öffnen</button><button class="btn" id="aCreate" type="button">Neuen Raum anlegen</button></div>
+      <div class="rbtns"><button class="btn primary big" id="aPwOk" type="button">Weiter</button></div>
       <div class="rbtns"><button class="btn" id="toStudent" type="button">← Zurück zur Startseite</button></div>
+    </div>
+    <div class="rcard lcard hide" id="agate2">
+      <label>Kurs-Code (den Lernenden mitteilen)
+        <input id="aroom" type="text" maxlength="16" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="zum Beispiel 10a"></label>
+      <div class="rerr" id="aerr2" role="alert"></div>
+      <div class="rbtns"><button class="btn primary big" id="aOpen" type="button">Raum öffnen</button><button class="btn" id="aCreate" type="button">Neuen Raum anlegen</button></div>
     </div>
     <div class="hide" id="apanel">
       <div class="gtools admhead">
@@ -1065,16 +1069,6 @@ const PAIR_FORCE_MS = 120000;  // so lange darf eine laufende Aufgabe die neue P
 const EMOJI = ['🦊', '🐼', '🐸', '🦁', '🐙', '🦄', '🐧', '🐝', '🦉', '🐢', '🦋', '🐳', '🦔', '🐨', '🐯', '🦖', '🐞', '🦜', '🐬', '🦒'];
 const hashStr = (s) => { let h = 5381; for (const c of String(s)) h = ((h << 5) + h + c.charCodeAt(0)) >>> 0; return h; };
 const emojiOf = (k) => EMOJI[hashStr(k) % EMOJI.length];
-async function pwHash(room, pw) {
-  const s = 'bb|' + room + '|' + pw;
-  try {
-    if (window.crypto && crypto.subtle) {
-      const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
-      return Array.from(new Uint8Array(b)).map((x) => x.toString(16).padStart(2, '0')).join('').slice(0, 40);
-    }
-  } catch (e) {}
-  return 'w' + hashStr(s).toString(36) + hashStr(s.split('').reverse().join('')).toString(36);
-}
 const codeHash = (code, pid) => hashStr(code + '|' + pid).toString(36);
 const cleanK = (s) => String(s || '').toUpperCase().replace(/[^A-ZÄÖÜ]/g, '').slice(0, 2);
 const cleanRoom = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9äöü]/g, '').slice(0, 16);
@@ -2111,27 +2105,35 @@ function logout() {
 /* ---------- Lehrkraft ---------- */
 const admin = { on: false, pairing: false, prev: new Set(), poll: 0, tick: 0, armed: false, sel: '', tab: 'lb' };
 const fmtT = (ms) => { const s = Math.max(0, Math.round(ms / 1000)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+const ADMIN_NODE = '_admin';   // Firebase: spielbrett / logik-_admin / pw  (Text = Admin-Passwort)
+async function adminPw() {
+  const pw = $('#apw').value, err = $('#aerr');
+  if (!pw) { err.textContent = 'Bitte das Admin-Passwort eingeben.'; return; }
+  let real;
+  try { real = await rReq('pw', 'GET', undefined, ADMIN_NODE); }
+  catch (e) { err.textContent = 'Keine Verbindung zur Datenbank.'; return; }
+  if (real === null || real === undefined || real === '') { err.textContent = 'In Firebase ist noch kein Admin-Passwort hinterlegt (spielbrett → logik-_admin → pw).'; return; }
+  if (String(real) !== pw) { err.textContent = 'Das Passwort stimmt nicht.'; $('#apw').value = ''; return; }
+  err.textContent = ''; $('#apw').value = '';
+  $('#agate').classList.add('hide'); $('#agate2').classList.remove('hide');
+  setTimeout(() => $('#aroom').focus(), 50);
+}
 async function adminGate(create) {
-  const room = cleanRoom($('#aroom').value), pw = $('#apw').value, err = $('#aerr');
+  const room = cleanRoom($('#aroom').value), err = $('#aerr2');
   if (!room) { err.textContent = 'Bitte einen Kurs-Code eingeben.'; return; }
-  if (pw.length < 4) { err.textContent = 'Das Passwort braucht mindestens 4 Zeichen.'; return; }
   err.textContent = '';
   let meta;
   try { meta = await rReq('meta', 'GET', undefined, room); }
   catch (e) { err.textContent = 'Keine Verbindung zur Datenbank.'; return; }
-  const h = await pwHash(room, pw);
   if (create) {
-    if (meta && meta.h) { err.textContent = 'Diesen Raum gibt es schon. Öffne ihn mit deinem Passwort oder wähle einen anderen Kurs-Code.'; return; }
-    try { await rReq('meta', 'PUT', { h, created: Date.now() }, room); } catch (e) { err.textContent = 'Der Raum konnte nicht angelegt werden.'; return; }
-  } else {
-    if (!meta || !meta.h) { err.textContent = 'Diesen Raum gibt es noch nicht. Lege ihn mit „Neuen Raum anlegen“ an.'; return; }
-    if (meta.h !== h) { err.textContent = 'Das Passwort stimmt nicht.'; return; }
-  }
+    if (meta && meta.created) { err.textContent = 'Diesen Raum gibt es schon. Du kannst ihn öffnen.'; return; }
+    try { await rReq('meta', 'PUT', { created: Date.now() }, room); } catch (e) { err.textContent = 'Der Raum konnte nicht angelegt werden.'; return; }
+  } else if (!meta || !meta.created) { err.textContent = 'Diesen Raum gibt es noch nicht. Lege ihn mit „Neuen Raum anlegen“ an.'; return; }
   LS.set('beweisbrett-aroom', room);
   S = freshState(); const cid = LS.get('beweisbrett-cid'); if (cid) S.cid = cid; S.room = room; S.k = '';
   await syncClock(room);
-  $('#agate').classList.add('hide'); $('#apanel').classList.remove('hide');
-  $('#aroomShow').textContent = room; $('#apw').value = '';
+  $('#agate2').classList.add('hide'); $('#apanel').classList.remove('hide');
+  $('#aroomShow').textContent = room;
   $('#asub').textContent = 'Dieses Fenster muss während des Spiels geöffnet bleiben, denn es bildet zum Timer-Ende die Paare.';
   admin.on = true; admin.sel = '';
   clearInterval(admin.poll); clearInterval(admin.tick);
@@ -2140,8 +2142,8 @@ async function adminGate(create) {
 }
 function adminClose() {
   clearInterval(admin.poll); clearInterval(admin.tick); admin.on = false;
-  $('#apanel').classList.add('hide'); $('#agate').classList.remove('hide');
-  $('#asub').textContent = 'Lege einen Spielraum an oder öffne deinen Raum mit dem Passwort. Dieses Fenster muss während des Spiels geöffnet bleiben, denn es bildet zum Timer-Ende die Paare.';
+  $('#apanel').classList.add('hide'); $('#agate').classList.remove('hide'); $('#agate2').classList.add('hide');
+  $('#asub').textContent = 'Nur für die Lehrkraft. Dieses Fenster muss während des Spiels geöffnet bleiben, denn es bildet zum Timer-Ende die Paare.';
 }
 function adminTab(name) {
   admin.tab = name;
@@ -2310,12 +2312,14 @@ function wire() {
   $('#pclose').addEventListener('click', () => closeOv('podium'));
   $('#aOpen').addEventListener('click', () => adminGate(false));
   $('#aCreate').addEventListener('click', () => adminGate(true));
-  $('#apw').addEventListener('keydown', (e) => { if (e.key === 'Enter') adminGate(false); });
+  $('#aPwOk').addEventListener('click', adminPw);
+  $('#apw').addEventListener('keydown', (e) => { if (e.key === 'Enter') adminPw(); });
+  $('#aroom').addEventListener('keydown', (e) => { if (e.key === 'Enter') adminGate(false); });
   $('#aLogout').addEventListener('click', adminClose);
   document.querySelector('.tabs').addEventListener('click', (e) => { const b = e.target.closest('.tab'); if (b) adminTab(b.dataset.tab); });
   $('#apgrid').addEventListener('click', (e) => { const c = e.target.closest('.pc'); if (!c) return; admin.sel = c.dataset.k; adminRender(); });
-  $('#toAdmin').addEventListener('click', () => { document.documentElement.classList.add('adminmode'); $('#login').classList.add('hide'); $('#admin').classList.remove('hide'); setTimeout(() => $(($('#aroom').value ? '#apw' : '#aroom')).focus(), 50); });
-  $('#toStudent').addEventListener('click', () => { document.documentElement.classList.remove('adminmode'); $('#admin').classList.add('hide'); $('#login').classList.remove('hide'); });
+  $('#toAdmin').addEventListener('click', () => { document.documentElement.classList.add('adminmode'); $('#login').classList.add('hide'); $('#admin').classList.remove('hide'); setTimeout(() => $('#apw').focus(), 50); });
+  $('#toStudent').addEventListener('click', () => { document.documentElement.classList.remove('adminmode'); $('#admin').classList.add('hide'); $('#login').classList.remove('hide'); $('#apw').value = ''; $('#aerr').textContent = ''; });
   $('#aStart').addEventListener('click', adminStart); $('#aPair').addEventListener('click', doPairing);
   $('#aEnd').addEventListener('click', adminEnd); $('#aReset').addEventListener('click', adminReset);
   document.addEventListener('keydown', (e) => {
