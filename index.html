@@ -451,6 +451,23 @@
   .cell.born { animation: born .8s cubic-bezier(.3, 1.5, .5, 1) both; animation-delay: var(--bd, 0s); }
   @keyframes born { 0% { transform: translateY(-260%) scale(.2) rotate(-60deg); opacity: 0; } 55% { opacity: 1; transform: translateY(10%) scale(1.3) rotate(10deg); } 78% { transform: translateY(-4%) scale(.92); } 100% { transform: none; opacity: 1; } }
 
+  /* Top 3 */
+  .top3 { margin: 0 0 .8rem; padding: .6rem .8rem; border: 1.6px solid var(--pink); border-radius: 1.2rem; background: #fff; }
+  .t3head { display: flex; align-items: center; justify-content: space-between; font-weight: 800; margin-bottom: .45rem; }
+  .live { display: inline-flex; align-items: center; gap: .4rem; color: #e0352b; font-weight: 800; font-size: .85rem; letter-spacing: .1em; }
+  .live i { width: .7rem; height: .7rem; border-radius: 50%; background: #e0352b; animation: livep 1.2s ease-out infinite; }
+  @keyframes livep { 0% { box-shadow: 0 0 0 0 rgba(224, 53, 43, .75); } 100% { box-shadow: 0 0 0 .7rem rgba(224, 53, 43, 0); } }
+  .t3row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; }
+  .t3 { display: flex; flex-direction: column; align-items: center; padding: .4rem .3rem; border-radius: 1rem; background: var(--pink-soft); font-weight: 800; line-height: 1.25; min-width: 0; }
+  .t3 .md { font-size: 1.5rem; } .t3 .nm { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .t3 .pt { color: var(--pink); font-size: .9rem; }
+  .t3.me { background: #fff3c4; outline: 2.5px solid var(--pink); }
+  .t3.empty { opacity: .45; }
+  .t3me { text-align: center; margin-top: .45rem; font-weight: 700; font-size: .9rem; color: var(--pink); }
+  .btn.danger { border-color: #d8412f; color: #d8412f; }
+  .btn.danger.armed { background: #d8412f; color: #fff; }
+  .bigcode.two { font-size: 2.6rem; }
+  .codes2 { display: flex; gap: .6rem; justify-content: center; flex-wrap: wrap; }
+
 </style>
 </head>
 <body>
@@ -502,10 +519,13 @@
           <button class="btn primary big" id="main" type="button">▶ Aufgabe starten</button>
           <p class="ansstat" id="pairinfo" hidden></p>
         </div>
-        <p class="panelhead">Rangliste</p>
-        <div class="lb" id="lb"></div>
       </aside>
       <div>
+        <div class="top3" id="top3">
+          <div class="t3head"><span>🏆 Rangliste</span><span class="live"><i></i>LIVE</span></div>
+          <div class="t3row" id="t3row"></div>
+          <div class="t3me" id="t3me" hidden></div>
+        </div>
         <div class="boardwrap">
           <div class="grid" id="grid"></div>
           <div class="tokens" id="tokens"></div>
@@ -547,6 +567,7 @@
         <span class="spacer"></span>
         <span class="chip tmr" id="aTimerChip">⏱ --:--</span>
         <button class="btn" id="aLogout" type="button">Raum schließen</button>
+        <button class="btn danger" id="aDissolve" type="button">Raum auflösen</button>
       </div>
       <div class="tabs" role="tablist">
         <button class="tab on" type="button" data-tab="lb" role="tab">🏆 Rangliste</button>
@@ -2049,15 +2070,14 @@ function leaderRows() {
   rows.sort((a, b) => b.s - a.s || (a.k < b.k ? -1 : 1));
   return rows;
 }
-function lbRow(r, i, me) {
-  return '<div class="lbrow' + (me ? ' me' : '') + '"><span class="rk">' + (i + 1) + '</span><span class="em">' + emojiOf(r.k) + '</span><span class="nm">' + esc(r.k) + (me ? ' (du)' : '') + '</span><span class="pt">' + r.s + ' P.</span></div>';
-}
 function renderLB() {
-  const el = $('#lb'); if (!el || !S.k) return;
-  const rows = leaderRows(), top = rows.slice(0, 4), my = rows.findIndex((r) => r.k === S.k);
-  let h = top.map((r, i) => lbRow(r, i, r.k === S.k)).join('');
-  if (my >= 4) h += (my > 4 ? '<div class="lbgap">⋮</div>' : '') + lbRow(rows[my], my, true);
-  el.innerHTML = h || '<div class="lbempty">Noch niemand auf der Liste.</div>';
+  const el = $('#t3row'); if (!el || !S.k) return;
+  const rows = leaderRows(), my = rows.findIndex((r) => r.k === S.k), medal = ['🥇', '🥈', '🥉'];
+  el.innerHTML = [0, 1, 2].map((i) => rows[i]
+    ? '<div class="t3' + (rows[i].k === S.k ? ' me' : '') + '"><span class="md">' + medal[i] + '</span><span class="nm">' + emojiOf(rows[i].k) + ' ' + esc(rows[i].k) + (rows[i].k === S.k ? ' (du)' : '') + '</span><span class="pt">' + rows[i].s + ' P.</span></div>'
+    : '<div class="t3 empty"><span class="md">' + medal[i] + '</span><span class="nm">–</span><span class="pt">&nbsp;</span></div>').join('');
+  const me = $('#t3me'); me.hidden = my < 3;
+  if (my >= 3) me.textContent = 'Du bist auf Platz ' + (my + 1) + ' mit ' + rows[my].s + ' P.';
 }
 function updateInfo() {
   const b = S.board; if (!b) return;
@@ -2065,7 +2085,7 @@ function updateInfo() {
   $('#rsub').textContent = 'Feld ' + b.pos + ' von ' + b.N + (b.dbl ? ' · ✨×2' : '');
   $('#who').textContent = emojiOf(S.k) + ' ' + S.k + ' · ' + S.score + ' P.';
   const pi = $('#pairinfo');
-  if (S.role === 'work' && S.confirmed && S.partners.length) { pi.hidden = false; pi.innerHTML = '👥 Ihr arbeitet zu zweit: ' + [S.k].concat(S.partners).map((k) => emojiOf(k) + ' ' + esc(k)).join(' + '); }
+  if (S.role === 'work' && S.confirmed && S.partners.length) { pi.hidden = false; pi.innerHTML = '👥 Ihr arbeitet ' + (S.partners.length > 1 ? 'zu dritt' : 'zu zweit') + ': ' + [S.k].concat(S.partners).map((k) => emojiOf(k) + ' ' + esc(k)).join(' + '); }
   else if (S.round > 0 && S.role === 'solo') { pi.hidden = false; pi.textContent = '🧍 Diese Runde spielst du allein.'; }
   else pi.hidden = true;
   const pend = $('#tPend'); if (pend) pend.hidden = !(net.session && net.session.state === 'running' && net.session.round !== S.round && net.session.round > 1);
@@ -2091,13 +2111,13 @@ function renderPair() {
     const others = S.partners.map(chip).join(' ');
     let h = '';
     if (st === 'show') {
-      h = '<h2>👥 Neue Paare!</h2><p>In dieser Runde arbeitest du mit ' + others + '. Such sie oder ihn auf und sage den Code nur persönlich:</p>' +
+      h = '<h2>' + (S.partners.length > 1 ? '👥 Neue Dreiergruppe!' : '👥 Neue Paare!') + '</h2><p>In dieser Runde arbeitest du mit ' + others + '. Gearbeitet wird auf dem Gerät von ' + chip(S.workK) + '. Such ' + (S.partners.length > 1 ? 'sie' : 'sie oder ihn') + ' auf und sage deinen Code nur persönlich:</p>' +
         '<div class="bigcode">' + esc(S.code) + '</div><p class="ansstat" id="pairStat">Warte, bis dein Gegenüber den Code eingegeben hat …</p>' +
         '<div class="rbtns"><button class="btn" id="pairSolo" type="button" hidden>Partner:in nicht da? Allein weiterspielen</button></div>';
     } else if (st === 'ask') {
-      const strong = S.partners.find((k) => k !== S.workK) || S.partners[0];
-      h = '<h2>👥 Neue Paare!</h2><p>In dieser Runde arbeitest du mit ' + others + '. Suche die Person auf: Auf ihrem Gerät steht ein vierstelliger Code. Gib ihn hier ein.</p>' +
-        '<label>Code<input class="codein" id="codeIn" type="text" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="····"></label>' +
+      const need = toArr(S.ch).length || 1;
+      h = '<h2>' + (need > 1 ? '👥 Neue Dreiergruppe!' : '👥 Neue Paare!') + '</h2><p>In dieser Runde arbeitest du mit ' + others + '. ' + (need > 1 ? 'Suche beide auf: Auf jedem Gerät steht ein vierstelliger Code. Gib beide Codes hier ein.' : 'Suche die Person auf: Auf ihrem Gerät steht ein vierstelliger Code. Gib ihn hier ein.') + '</p><div class="codes2">' +
+        Array.from({ length: need }, (_, i) => '<label>Code ' + (need > 1 ? i + 1 : '') + '<input class="codein" id="codeIn' + i + '" type="text" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="····"></label>').join('') + '</div>' +
         '<div class="rerr" id="codeErr" role="alert"></div>' +
         '<div class="rbtns"><button class="btn primary big" id="codeOk" type="button">Bestätigen</button><button class="btn" id="pairSolo" type="button" hidden>Partner:in nicht da? Allein weiterspielen</button></div>';
     } else {
@@ -2106,20 +2126,20 @@ function renderPair() {
     }
     $('#pairBody').innerHTML = h;
     openOv('pairov');
-    const ci = $('#codeIn'); if (ci) setTimeout(() => ci.focus(), 80);
+    const ci = $('#codeIn0'); if (ci) setTimeout(() => ci.focus(), 80);
   }
   const ps = $('#pairSolo'); if (ps) ps.hidden = !waited;
   const stat = $('#pairStat');
   if (stat) { const conf = (net.confirm && net.confirm[S.round]) || {}; stat.textContent = Object.keys(conf).length ? '✓ Dein Gegenüber ist da.' : 'Warte, bis dein Gegenüber den Code eingegeben hat …'; }
 }
 function confirmCode() {
-  const v = ($('#codeIn').value || '').trim();
-  if (codeHash(v, S.pid) !== S.ch) { $('#codeErr').textContent = 'Der Code stimmt nicht. Frag noch einmal nach.'; sfx.no(); return; }
+  const need = toArr(S.ch), hs = Array.from(document.querySelectorAll('.codein')).map((i) => codeHash((i.value || '').trim(), S.pid));
+  if (hs.length !== need.length || new Set(hs).size !== hs.length || !need.every((h) => hs.includes(h))) { $('#codeErr').textContent = need.length > 1 ? 'Mindestens ein Code stimmt nicht. Frag noch einmal nach.' : 'Der Code stimmt nicht. Frag noch einmal nach.'; sfx.no(); return; }
   S.confirmed = true; save(); sfx.cheer();
   rReq('confirm/' + S.round + '/' + S.k, 'PUT', Date.now()).catch(() => {});
   if (S.role === 'work') {
     S.board = newBoard(0); S.taskNo = S.taskNo; save(); drawBoard();
-    say('👥 Ihr arbeitet jetzt zu zweit auf diesem Gerät. Frisches Spielfeld!');
+    say('👥 Ihr arbeitet jetzt ' + (S.partners.length > 1 ? 'zu dritt' : 'zu zweit') + ' auf diesem Gerät. Frisches Spielfeld!');
   }
   pairKey = ''; renderPair(); updateInfo();
 }
@@ -2135,7 +2155,7 @@ function applyRound(sess, a) {
     S.role = 'solo'; S.pid = ''; S.partners = []; S.confirmed = true;
     if (!joining) { S.board = newBoard(0); drawBoard(); say('🧍 Neue Runde! Diesmal ohne Partner:in, auf frischem Spielfeld.'); }
   } else {
-    S.role = mine.role; S.pid = mine.pid; S.partners = toArr(mine.with); S.workK = mine.work; S.code = mine.code || ''; S.ch = mine.ch;
+    S.role = mine.role; S.pid = mine.pid; S.partners = toArr(mine.with); S.workK = mine.work; S.code = mine.code || ''; S.ch = toArr(mine.ch);
     S.confirmed = false; S.waitSince = Date.now();
     if (S.role === 'strong' || S.role === 'guest') { /* eigenes Brett ruht in dieser Runde */ }
   }
@@ -2171,8 +2191,10 @@ async function netPoll() {
   if (!S.k) return;
   net.last = Date.now();
   try {
-    await rReq('players/' + S.k, 'PATCH', { seen: { '.sv': 'timestamp' }, cid: S.cid });
     const d = (await rReq('', 'GET')) || {};
+    const gen = d.meta && d.meta.created;
+    if (!gen || (S.gen && gen !== S.gen)) { kicked(); return; }
+    await rReq('players/' + S.k, 'PATCH', { seen: { '.sv': 'timestamp' }, cid: S.cid });
     net.ok = true; net.players = d.players || {}; net.session = d.session || null; net.assign = d.assign || null; net.confirm = d.confirm || {};
     const me = net.players[S.k];
     if (me && typeof me.s === 'number') S.score = me.s;
@@ -2185,6 +2207,18 @@ async function netPoll() {
     checkPairing();
   }
   renderLB(); updateInfo();
+}
+
+function kicked() {
+  clearInterval(pollTimer); clearInterval(tickTimer); clearTimeout(liveTimer);
+  if (T) closeTask();
+  ['pairov', 'result', 'intro', 'rules', 'podium'].forEach((id) => closeOv(id));
+  LS.set(stateKey(S.k, S.room), ''); LS.set('beweisbrett-last', '');
+  const room = S.room; S = freshState(); net.players = {}; net.session = null; net.assign = null; net.confirm = {};
+  $('#gamewrap').classList.add('hide'); $('#login').classList.remove('hide');
+  $('#inK').value = ''; $('#inRoom').value = room || '';
+  $('#lerr').textContent = 'Der Raum wurde von der Lehrkraft aufgelöst. Du wurdest abgemeldet.';
+  sfx.no();
 }
 
 /* ---------- Timer bis zur Paarung (auf allen Geräten) ---------- */
@@ -2211,6 +2245,8 @@ async function login() {
   catch (e) { err.textContent = 'Keine Verbindung zur Datenbank. Bitte gleich noch einmal versuchen.'; return; }
   if (!meta) { err.textContent = 'Diesen Kurs-Code gibt es nicht. Frag deine Lehrkraft.'; return; }
   S = loadState(k, room);
+  if (S.gen && S.gen !== meta) { LS.set(stateKey(k, room), ''); S = loadState(k, room); }   // alter Spielstand aus einem aufgelösten Raum
+  S.gen = meta;
   await syncClock(room);
   try {
     const p = await rReq('players/' + k, 'GET', undefined, room);
@@ -2222,7 +2258,7 @@ async function login() {
     else await rReq('players/' + k, 'PUT', { s: S.score || 0, seen: { '.sv': 'timestamp' }, cid: S.cid }, room);
   } catch (e) { net.ok = false; }
   forceLogin = false;
-  LS.set('beweisbrett-last', JSON.stringify({ k, room }));
+  LS.set('beweisbrett-last', JSON.stringify({ room }));
   if (!S.board) S.board = newBoard(0);
   save();
   $('#login').classList.add('hide'); $('#gamewrap').classList.remove('hide');
@@ -2381,11 +2417,12 @@ async function doPairing() {
     if (act.length >= 2) {
       formPairs(act).forEach((p, idx) => {
         const pid = 'p' + round + '_' + idx;
-        let code; do code = String(1000 + rnd(9000)); while (usedCodes.has(code)); usedCodes.add(code);
-        const members = [p.strong, p.weak].concat(p.guest ? [p.guest] : []), ch = codeHash(code, pid);
-        by[p.strong] = { pid, role: 'strong', with: members.filter((x) => x !== p.strong), work: p.weak, code, ch };
-        by[p.weak] = { pid, role: 'work', with: members.filter((x) => x !== p.weak), work: p.weak, ch };
-        if (p.guest) by[p.guest] = { pid, role: 'guest', with: members.filter((x) => x !== p.guest), work: p.weak, ch };
+        const members = [p.strong, p.weak].concat(p.guest ? [p.guest] : []).sort((x, y) => act.indexOf(x) - act.indexOf(y));
+        const work = members[members.length - 1], showers = members.slice(0, -1);   // das schwächste Gerät arbeitet
+        const codes = showers.map(() => { let c; do c = String(1000 + rnd(9000)); while (usedCodes.has(c)); usedCodes.add(c); return c; });
+        const chs = codes.map((c) => codeHash(c, pid));
+        showers.forEach((k, i) => { by[k] = { pid, role: 'strong', with: members.filter((x) => x !== k), work, code: codes[i] }; });
+        by[work] = { pid, role: 'work', with: showers, work, ch: chs };
         members.forEach((a) => members.forEach((b) => { if (a < b) prev.add(pairKeyOf(a, b)); }));
       });
     }
@@ -2405,6 +2442,20 @@ async function adminStart() {
     await rReq('session', 'PUT', { state: 'running', round: 1, dur, endsAt: t0 + dur * 60000, t0 }, S.room);
   } catch (e) { $('#ainfo').textContent = 'Das hat nicht geklappt: keine Verbindung.'; return; }
   admin.prev = new Set(); adminPoll();
+}
+async function adminDissolve() {
+  const b = $('#aDissolve');
+  if (!admin.dis) {
+    admin.dis = true; b.textContent = 'Wirklich auflösen? Alle fliegen raus'; b.classList.add('armed');
+    setTimeout(() => { admin.dis = false; b.textContent = 'Raum auflösen'; b.classList.remove('armed'); }, 5000); return;
+  }
+  admin.dis = false; b.textContent = 'Raum auflösen'; b.classList.remove('armed');
+  const room = S.room;
+  try { await rReq('', 'PUT', null, room); } catch (e) { $('#ainfo').textContent = 'Das hat nicht geklappt: keine Verbindung.'; return; }
+  setTimeout(() => rReq('', 'PUT', null, room).catch(() => {}), 4500);   // Nachzügler, die noch einmal schreiben
+  clearInterval(admin.poll); clearInterval(admin.tick); admin.on = false;
+  $('#apanel').classList.add('hide'); $('#agate2').classList.remove('hide'); $('#aroom').value = '';
+  $('#aerr2').textContent = 'Der Raum „' + room + '“ ist aufgelöst. Alle Lernenden werden abgemeldet. Du kannst jetzt einen neuen Raum anlegen.';
 }
 async function adminEnd() { try { await rReq('session', 'PATCH', { state: 'ended' }, S.room); } catch (e) {} adminPoll(); }
 async function adminReset() {
@@ -2451,6 +2502,7 @@ function wire() {
   $('#apw').addEventListener('keydown', (e) => { if (e.key === 'Enter') adminPw(); });
   $('#aroom').addEventListener('keydown', (e) => { if (e.key === 'Enter') adminGate(false); });
   $('#aLogout').addEventListener('click', adminClose);
+  $('#aDissolve').addEventListener('click', adminDissolve);
   document.querySelector('.tabs').addEventListener('click', (e) => { const b = e.target.closest('.tab'); if (b) adminTab(b.dataset.tab); });
   $('#apgrid').addEventListener('click', (e) => { const c = e.target.closest('.pc'); if (!c) return; admin.sel = c.dataset.k; adminRender(); });
   $('#toAdmin').addEventListener('click', () => { document.documentElement.classList.add('adminmode'); $('#login').classList.add('hide'); $('#admin').classList.remove('hide'); setTimeout(() => $('#apw').focus(), 50); });
@@ -2475,7 +2527,7 @@ function wire() {
   });
   document.addEventListener('visibilitychange', () => { if (!document.hidden && S.k) netPoll(); });
   // zuletzt benutzte Eingaben
-  try { const l = JSON.parse(LS.get('beweisbrett-last') || 'null'); if (l) { $('#inK').value = l.k || ''; $('#inRoom').value = l.room || ''; } } catch (e) {}
+  try { const l = JSON.parse(LS.get('beweisbrett-last') || 'null'); if (l) { $('#inRoom').value = l.room || ''; } } catch (e) {}
   const q = new URLSearchParams(location.search).get('kurs'); if (q) $('#inRoom').value = cleanRoom(q);
   const qa = new URLSearchParams(location.search).get('kurs'); $('#aroom').value = qa ? cleanRoom(qa) : (LS.get('beweisbrett-aroom') || '');
   if (document.documentElement.classList.contains('adminmode')) { $('#admin').classList.remove('hide'); }
